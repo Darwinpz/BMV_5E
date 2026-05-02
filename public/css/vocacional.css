@@ -1,0 +1,281 @@
+/* ──────────────────────────────────────────
+   Vocacional · BMV Design System
+   ────────────────────────────────────────── */
+
+:root {
+    --enganchar:   #C0392B;
+    --explorar:    #E67E22;
+    --explicar:    #27AE60;
+    --elaborar:    #2980B9;
+    --evaluar:     #2C3E50;
+    --bg-page:     #F4F6F8;
+}
+
+body {
+    background-color: var(--bg-page);
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Logo ──────────────────────────────────── */
+.logo-bmv {
+    width: 42px;
+    height: 42px;
+    background: var(--enganchar);
+    color: white;
+    font-weight: 900;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(192,57,43,.4);
+}
+
+/* ── Avatar ────────────────────────────────── */
+.avatar-circle {
+    width: 34px;
+    height: 34px;
+    background: var(--evaluar);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ── Module cards (landing) ────────────────── */
+.module-card {
+    border-radius: 16px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: white;
+    transition: transform .22s ease, box-shadow .22s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+.module-card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 14px 28px rgba(0,0,0,.22);
+    color: white;
+}
+.module-card .card-num  { font-size: .75rem; opacity: .8; margin-bottom: .4rem; letter-spacing: .05em; }
+.module-card .card-icon { font-size: 2.2rem; margin-bottom: .5rem; }
+.module-card .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: .2rem; }
+.module-card .card-subtitle { font-size: .73rem; opacity: .85; }
+
+.mc-enganchar { background: var(--enganchar); }
+.mc-explorar  { background: var(--explorar); }
+.mc-explicar  { background: var(--explicar); }
+.mc-elaborar  { background: var(--elaborar); }
+.mc-evaluar   { background: var(--evaluar); }
+
+/* Allow 5 equal columns on medium+ screens */
+@media (min-width: 768px) {
+    .col-md-2-4 { flex: 0 0 auto; width: 20%; }
+}
+
+/* ── Hero section ──────────────────────────── */
+.hero-section {
+    background: linear-gradient(135deg, #F8F9FA 0%, #E8EEF4 100%);
+    padding: 4rem 0;
+}
+.min-vh-60 { min-height: 60vh; }
+
+/* ── Module headers ────────────────────────── */
+.module-header {
+    padding: 1.5rem 2rem;
+    color: white;
+}
+.mod-label    { font-size: .75rem; text-transform: uppercase; letter-spacing: .1em; opacity: .8; margin-bottom: .15rem; }
+.module-header h2 { font-size: 2rem; font-weight: 800; margin: .05rem 0; }
+.mod-subtitle { font-size: .9rem; opacity: .85; }
+
+.mh-enganchar { background: var(--enganchar); }
+.mh-explorar  { background: var(--explorar); }
+.mh-explicar  { background: var(--explicar); }
+.mh-elaborar  { background: var(--elaborar); }
+.mh-evaluar   { background: var(--evaluar); }
+
+/* ── Progress modal steps ──────────────────── */
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: .75rem 1rem;
+    border-radius: 10px;
+    background: white;
+    border: 2px solid #E9ECEF;
+    transition: border-color .2s;
+}
+.progress-step.completed {
+    border-color: var(--explicar);
+    background: #EAFAF1;
+}
+
+/* ── Registration steps dots ───────────────── */
+.step-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #DEE2E6;
+}
+.step-dot-active { background: var(--enganchar); }
+
+/* ── DISC option cards ─────────────────────── */
+.disc-option {
+    border: 2px solid #E9ECEF;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+    background: white;
+    min-height: 75px;
+    display: flex;
+    align-items: flex-start;
+}
+.disc-option:hover {
+    border-color: #ADB5BD;
+    background: #F8F9FA;
+    transform: scale(1.015);
+}
+
+/* ── DISC chart label overlay ──────────────── */
+.disc-chart-label { pointer-events: none; }
+
+/* ── Profile buttons (Explicar) ────────────── */
+.profile-btn {
+    border: none;
+    border-radius: 12px;
+    padding: .75rem 1.25rem;
+    font-weight: 600;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    color: white;
+    margin-bottom: .5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: opacity .15s, transform .12s, box-shadow .15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.profile-btn:hover { opacity: .92; transform: scale(1.01); }
+.profile-btn.active { box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 4px 12px rgba(0,0,0,.2); }
+
+.pb-D { background: var(--enganchar); }
+.pb-I { background: var(--explorar); }
+.pb-S { background: var(--explicar); }
+.pb-C { background: var(--elaborar); }
+
+/* ── DISC badge large ──────────────────────── */
+.disc-badge-large {
+    width: 60px; height: 60px;
+    border-radius: 14px;
+    color: white;
+    font-size: 1.8rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,.2);
+}
+
+/* ── Elaborar steps ────────────────────────── */
+.step-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+.step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    color: white;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: .9rem;
+}
+.prompt-box {
+    background: #F8F9FA;
+    border: 1px solid #DEE2E6;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    font-size: .9rem;
+    line-height: 1.7;
+    color: #212529;
+}
+
+/* ── Rating labels (Evaluar) ───────────────── */
+.rating-label {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: 2px solid #DEE2E6;
+    background: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .15s;
+    font-size: 1rem;
+    color: #2C3E50;
+}
+.rating-label:hover {
+    background: var(--evaluar);
+    border-color: var(--evaluar);
+    color: white;
+}
+
+/* ── Career image cards ────────────────────── */
+.career-img-card {
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    cursor: default;
+}
+.career-img-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform .3s ease;
+}
+.career-img-card:hover img { transform: scale(1.05); }
+.career-img-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(transparent, rgba(0,0,0,.65));
+    color: white;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .5rem .6rem .4rem;
+}
+
+/* ── Completion page ───────────────────────── */
+.completion-icon {
+    font-size: 5rem;
+    display: block;
+    animation: bounceIn .6s ease;
+}
+@keyframes bounceIn {
+    0%   { transform: scale(.3); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* ── Word cloud container ──────────────────── */
+.word-cloud-container {
+    background: #FAFAFA;
+    border-radius: 12px;
+    min-height: 380px;
+    position: relative;
+    overflow: hidden;
+}
+#wordCloudCanvas {
+    width: 100%;
+    height: 380px;
+    display: block;
+}
+
+/* ── Utility ───────────────────────────────── */
+.fw-black  { font-weight: 900 !important; }
+.rounded-4 { border-radius: 1rem !important; }
+.rounded-3 { border-radius: .75rem !important; }

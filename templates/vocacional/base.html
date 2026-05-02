@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Explora tu Futuro - BMV{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/vocacional.css') }}" rel="stylesheet">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none" href="{{ url_for('vocacional.index') }}">
+            <div class="logo-bmv">B</div>
+            <span class="text-muted small d-none d-md-block fw-semibold">Instituto Bolivar Madero Vargas</span>
+        </a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav ms-auto align-items-center gap-1 me-3">
+                <li class="nav-item">
+                    <a class="nav-link px-3 {% block nav_inicio %}{% endblock %}" href="{{ url_for('vocacional.index') }}">Inicio</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#" data-bs-toggle="modal" data-bs-target="#progresoModal">Mi Progreso</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="{{ url_for('vocacional.explicar') }}">Resultados</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link px-3" href="#" data-bs-toggle="modal" data-bs-target="#ayudaModal">Ayuda</a>
+                </li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <!-- Admin access: shows results link if logged in, login link otherwise -->
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('vocacional.admin_resultados') }}"
+                   class="btn btn-sm fw-semibold px-3" style="background:#2C3E50;color:white;"
+                   title="Panel de resultados">
+                    <i class="bi bi-bar-chart-fill me-1"></i>Resultados
+                </a>
+                <form method="POST" action="{{ url_for('users.logout') }}" class="mb-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm px-2" title="Cerrar sesión admin">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('users.login') }}"
+                   class="btn btn-outline-secondary btn-sm px-2" title="Acceso administrativo">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </a>
+                {% endif %}
+
+                <!-- Student session -->
+                {% if session.get('student_name') %}
+                <div class="avatar-circle">{{ session.student_name[0].upper() }}</div>
+                <span class="small text-muted d-none d-lg-block fw-semibold">{{ session.student_name }}</span>
+                <form method="POST" action="{{ url_for('vocacional.salir') }}" class="mb-0">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm px-2" title="Cerrar sesión de estudiante">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container-fluid px-4 mt-2">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show mb-1" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+{% block content %}{% endblock %}
+
+<!-- Modal: Mi Progreso -->
+<div class="modal fade" id="progresoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-bar-chart-fill me-2 text-primary"></i>Mi Progreso</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-2">
+                {% set mods = session.get('completed_modules', []) %}
+                <div class="d-flex flex-column gap-2">
+                    {% set steps = [
+                        ('student_id', 'bi-person-fill', 'enganchar', '#C0392B', 'Registro', 'Datos del estudiante'),
+                        ('enganchar' in mods, 'bi-magnet-fill', 'enganchar', '#C0392B', 'Enganchar', 'Nube de palabras'),
+                        ('explorar' in mods, 'bi-compass-fill', 'explorar', '#E67E22', 'Explorar', 'Test DISC'),
+                        ('explicar' in mods, 'bi-book-fill', 'explicar', '#27AE60', 'Explicar', 'Tu perfil DISC'),
+                        ('elaborar' in mods, 'bi-lightbulb-fill', 'elaborar', '#2980B9', 'Elaborar', 'Usa la IA'),
+                        ('evaluar' in mods, 'bi-clipboard-check-fill', 'evaluar', '#2C3E50', 'Evaluar', 'Ticket de salida'),
+                    ] %}
+                    <div class="progress-step {{ 'completed' if session.get('student_id') else '' }}">
+                        <i class="bi bi-person-fill fs-5" style="color: #C0392B;"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">Registro</div>
+                            <div class="text-muted" style="font-size:0.75rem">Datos del estudiante</div>
+                        </div>
+                        {% if session.get('student_id') %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-secondary"></i>{% endif %}
+                    </div>
+                    {% for key, icon, route, color, label, sub in [
+                        ('enganchar', 'bi-magnet-fill', 'enganchar', '#C0392B', 'Enganchar', 'Nube de palabras'),
+                        ('explorar', 'bi-compass-fill', 'explorar', '#E67E22', 'Explorar', 'Test DISC'),
+                        ('explicar', 'bi-book-fill', 'explicar', '#27AE60', 'Explicar', 'Tu perfil DISC'),
+                        ('elaborar', 'bi-lightbulb-fill', 'elaborar', '#2980B9', 'Elaborar', 'Usa la IA'),
+                        ('evaluar', 'bi-clipboard-check-fill', 'evaluar', '#2C3E50', 'Evaluar', 'Ticket de salida'),
+                    ] %}
+                    <div class="progress-step {{ 'completed' if key in mods else '' }}">
+                        <i class="{{ icon }} fs-5" style="color: {{ color }};"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">{{ label }}</div>
+                            <div class="text-muted" style="font-size:0.75rem">{{ sub }}</div>
+                        </div>
+                        {% if key in mods %}<i class="bi bi-check-circle-fill text-success"></i>{% else %}<i class="bi bi-circle text-secondary"></i>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Ayuda -->
+<div class="modal fade" id="ayudaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-question-circle-fill me-2 text-warning"></i>Ayuda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion accordion-flush" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#h1">¿Cómo funciona el programa?</button></h2>
+                        <div id="h1" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body text-muted small">El programa consta de 5 módulos: Enganchar, Explorar, Explicar, Elaborar y Evaluar. Completa cada uno en orden para descubrir tu perfil vocacional.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#h2">¿Qué es el Test DISC?</button></h2>
+                        <div id="h2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body text-muted small">El Test DISC es una herramienta psicométrica que identifica tu estilo de personalidad dominante: Dominante (D), Influyente (I), Estable (S) o Cumplidor (C). Responde con honestidad para obtener resultados precisos.</div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header"><button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#h3">¿Puedo retomar el test más tarde?</button></h2>
+                        <div id="h3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body text-muted small">Sí. Tu sesión se guarda en el navegador. Si cierras la ventana y vuelves a entrar, regístrate nuevamente para continuar.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

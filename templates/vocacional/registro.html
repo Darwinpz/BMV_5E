@@ -1,0 +1,76 @@
+{% extends 'vocacional/base.html' %}
+{% block title %}Registro - Explora tu Futuro{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center" style="background: linear-gradient(135deg,#F8F9FA 0%,#E8EEF4 100%);">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+
+                <!-- Steps indicator -->
+                <div class="d-flex justify-content-center gap-2 mb-4">
+                    <div class="step-dot step-dot-active"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                    <div class="step-dot"></div>
+                </div>
+
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <!-- Card header -->
+                    <div class="p-4 text-white text-center" style="background:#C0392B;">
+                        <div class="logo-bmv mx-auto mb-3" style="width:56px;height:56px;font-size:2rem;background:rgba(255,255,255,0.2);">B</div>
+                        <h3 class="fw-bold mb-1">¡Bienvenido!</h3>
+                        <p class="mb-0 opacity-75 small">Ingresa tus datos para comenzar tu exploración vocacional</p>
+                    </div>
+
+                    <!-- Form -->
+                    <div class="card-body p-4">
+                        <form method="POST" action="{{ url_for('vocacional.registro_post') }}" novalidate>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Nombre completo <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-fill text-muted"></i></span>
+                                    <input type="text" name="nombre" class="form-control border-start-0 ps-1"
+                                           placeholder="Ej. María García López" required minlength="3"
+                                           autofocus autocomplete="name">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Correo electrónico <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope-fill text-muted"></i></span>
+                                    <input type="email" name="email" class="form-control border-start-0 ps-1"
+                                           placeholder="correo@ejemplo.com" required autocomplete="email">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small">Teléfono de contacto <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone-fill text-muted"></i></span>
+                                    <input type="tel" name="telefono" class="form-control border-start-0 ps-1"
+                                           placeholder="0991234567" required autocomplete="tel">
+                                </div>
+                                <div class="form-text text-muted small">Solo para seguimiento académico, no se compartirá.</div>
+                            </div>
+
+                            <button type="submit" class="btn btn-danger w-100 fw-bold py-2 fs-6">
+                                <i class="bi bi-rocket-takeoff-fill me-2"></i>Comenzar mi exploración
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <p class="text-center text-muted small mt-3">
+                    <i class="bi bi-lock-fill me-1"></i>Tus datos son confidenciales y solo se usan para esta actividad.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'vocacional/base.html' %}
+{% block title %}Enganchar - Módulo 1{% endblock %}
+
+{% block content %}
+<!-- Module header -->
+<div class="module-header mh-enganchar d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div>
+        <div class="mod-label"><i class="bi bi-magnet-fill me-1"></i>MÓDULO 1</div>
+        <h2>Enganchar</h2>
+        <div class="mod-subtitle">Cuéntanos tus sueños</div>
+    </div>
+    <a href="{{ url_for('vocacional.explorar') }}" class="btn btn-outline-light btn-sm px-3">
+        Siguiente módulo <i class="bi bi-arrow-right"></i>
+    </a>
+</div>
+
+<div class="container py-4">
+    <div class="row g-4">
+
+        <!-- Left: input -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <p class="text-muted small mb-3 fw-semibold">RESPONDE LA SIGUIENTE PREGUNTA:</p>
+                    <div class="question-card p-4 rounded-3 mb-4" style="background:#FEF2F2; border-left:4px solid #C0392B;">
+                        <p class="fw-bold mb-0 fs-6" style="line-height:1.5;">
+                            ¿Si el dinero no fuera un problema, qué estarías haciendo a los 25 años?
+                        </p>
+                    </div>
+
+                    <label class="form-label fw-semibold small">Escribe hasta 3 respuestas</label>
+                    <div class="input-group mb-2">
+                        <input type="text" id="wordInput" class="form-control rounded-start-3" maxlength="50"
+                               placeholder="Escribe tu respuesta..." id="wordInput">
+                        <span class="input-group-text text-muted small" id="charCount">0/50</span>
+                    </div>
+                    <div id="wordError" class="text-danger small mb-2 d-none"></div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted small">
+                            <i class="bi bi-chat-dots me-1"></i>
+                            Respuestas enviadas: <strong id="sentCount">{{ word_count }}</strong>/3
+                        </span>
+                    </div>
+
+                    <button id="btnEnviar" class="btn btn-danger w-100 fw-bold py-2"
+                            {% if word_count >= 3 %}disabled{% endif %}>
+                        <i class="bi bi-send-fill me-2"></i>Enviar respuesta
+                    </button>
+
+                    {% if word_count >= 3 %}
+                    <div class="alert alert-success mt-3 mb-0 small">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        ¡Gracias! Ya enviaste tus 3 respuestas. Observa la nube de palabras.
+                    </div>
+                    {% endif %}
+
+                    <!-- Submitted words -->
+                    <div id="submittedWords" class="mt-3">
+                        {% if word_count > 0 %}
+                        <p class="text-muted small mb-2">Tus respuestas:</p>
+                        <div id="myWordBadges"></div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: word cloud -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="fw-bold mb-0">Nube de palabras en tiempo real</h6>
+                            <small class="text-muted">Actualización automática cada 3 segundos</small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-danger-subtle text-danger small" id="totalWords">Cargando...</span>
+                            <a href="{{ url_for('vocacional.nube_display') }}" target="_blank"
+                               class="btn btn-outline-secondary btn-sm" title="Ver en pantalla completa">
+                                <i class="bi bi-fullscreen"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="word-cloud-container rounded-3" style="min-height:380px; background:#FAFAFA; border:1px solid #F0F0F0; position:relative;">
+                        <canvas id="wordCloudCanvas" style="display:none; position:absolute; top:0; left:0;"></canvas>
+                        <div id="cloudPlaceholder" class="d-flex flex-column align-items-center justify-content-center text-muted" style="min-height:380px; position:absolute; inset:0;">
+                            <i class="bi bi-cloud fs-1 mb-2 opacity-50"></i>
+                            <span class="small">Esperando respuestas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+        <a href="{{ url_for('vocacional.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-house me-1"></i>Inicio
+        </a>
+        <a href="{{ url_for('vocacional.explorar') }}" class="btn btn-danger px-4 fw-bold">
+            Continuar al Test DISC <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js"></script>
+<script>
+const csrfToken = '{{ csrf_token() }}';
+let wordCount = {{ word_count }};
+let myWords = [];
+
+const wordInput = document.getElementById('wordInput');
+const btnEnviar = document.getElementById('btnEnviar');
+const sentCount = document.getElementById('sentCount');
+const wordError = document.getElementById('wordError');
+const charCount = document.getElementById('charCount');
+const totalWordsEl = document.getElementById('totalWords');
+const cloudPlaceholder = document.getElementById('cloudPlaceholder');
+
+wordInput.addEventListener('input', () => {
+    const len = wordInput.value.length;
+    charCount.textContent = `${len}/50`;
+});
+
+wordInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); enviarPalabra(); }
+});
+
+btnEnviar.addEventListener('click', enviarPalabra);
+
+async function enviarPalabra() {
+    const palabra = wordInput.value.trim();
+    if (!palabra) { showError('Por favor escribe una respuesta.'); return; }
+    if (wordCount >= 3) { showError('Ya enviaste el máximo de 3 respuestas.'); return; }
+
+    btnEnviar.disabled = true;
+    hideError();
+
+    try {
+        const res = await fetch('{{ url_for("vocacional.enganchar_palabra") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ palabra })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            wordCount = data.count;
+            sentCount.textContent = wordCount;
+            myWords.push(palabra);
+            wordInput.value = '';
+            charCount.textContent = '0/50';
+            renderMyBadges();
+
+            if (wordCount >= 3) {
+                btnEnviar.disabled = true;
+                wordInput.disabled = true;
+                showSuccess('¡Gracias! Ya enviaste tus 3 respuestas.');
+            } else {
+                btnEnviar.disabled = false;  // Re-habilitar para más respuestas
+                wordInput.focus();
+            }
+        } else {
+            showError(data.message || 'Error al enviar.');
+            btnEnviar.disabled = false;
+        }
+    } catch {
+        showError('Error de conexión. Inténtalo de nuevo.');
+        btnEnviar.disabled = false;
+    }
+}
+
+function showError(msg) {
+    wordError.textContent = msg;
+    wordError.classList.remove('d-none');
+}
+function hideError() { wordError.classList.add('d-none'); }
+
+function showSuccess(msg) {
+    const el = document.createElement('div');
+    el.className = 'alert alert-success mt-3 small';
+    el.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i>${msg}`;
+    document.getElementById('submittedWords').appendChild(el);
+}
+
+function renderMyBadges() {
+    const container = document.getElementById('myWordBadges');
+    if (!container) return;
+    container.innerHTML = myWords.map(w =>
+        `<span class="badge bg-danger-subtle text-danger me-1 mb-1 px-3 py-2">${w}</span>`
+    ).join('');
+}
+
+// Word cloud rendering — only re-draws when words change
+let lastWordSig = null;
+let cloudRendering = false;
+const CLOUD_COLORS = ['#C0392B','#E67E22','#27AE60','#2980B9','#8E44AD','#16A085','#D35400','#1A5276','#E91E63','#00BCD4'];
+
+async function refreshWordCloud() {
+    if (cloudRendering) return;
+    try {
+        const res = await fetch('{{ url_for("vocacional.api_palabras") }}');
+        const words = await res.json();
+        const sig = JSON.stringify(words);
+
+        totalWordsEl.textContent = words.length > 0 ? `${words.length} palabra${words.length !== 1 ? 's' : ''}` : 'Sin respuestas aún';
+
+        const canvas = document.getElementById('wordCloudCanvas');
+
+        if (words.length === 0) {
+            cloudPlaceholder.style.display = 'flex';
+            canvas.style.display = 'none';
+            lastWordSig = sig;
+            return;
+        }
+
+        if (sig === lastWordSig) return; // Sin cambios, no redibujar
+        lastWordSig = sig;
+
+        cloudRendering = true;
+        cloudPlaceholder.style.display = 'none';
+        canvas.style.display = 'block';
+        canvas.style.transition = 'opacity 0.3s ease';
+        canvas.style.opacity = '0.2';
+
+        setTimeout(() => {
+            const container = canvas.parentElement;
+            canvas.width  = container.offsetWidth  || 500;
+            canvas.height = 380;
+
+            const maxWeight = Math.max(...words.map(w => w.weight));
+            const n = words.length;
+            // Adaptive max font size: fewer words → bigger text
+            const maxFont = n <= 5 ? 72 : n <= 15 ? 52 : n <= 30 ? 38 : 28;
+
+            const list = words.map(w => [
+                w.text,
+                Math.max(16, Math.round((w.weight / maxWeight) * maxFont) + 16)
+            ]);
+
+            WordCloud(canvas, {
+                list,
+                gridSize: 10,
+                weightFactor: 1,
+                fontFamily: 'Impact, Arial Black, sans-serif',
+                color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
+                rotateRatio: 0,
+                rotationSteps: 1,
+                backgroundColor: '#FAFAFA',
+                shrinkToFit: true,
+                drawOutOfBound: false,
+                wait: 15,
+            });
+
+            canvas.style.opacity = '1';
+            setTimeout(() => { cloudRendering = false; }, 800);
+        }, 300);
+    } catch (e) {
+        cloudRendering = false;
+        console.error('Error cargando nube:', e);
+    }
+}
+
+refreshWordCloud();
+setInterval(refreshWordCloud, 3500);
+</script>
+{% endblock %}

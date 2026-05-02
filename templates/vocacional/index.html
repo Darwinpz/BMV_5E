@@ -1,0 +1,101 @@
+{% extends 'vocacional/base.html' %}
+{% block title %}Explora tu Futuro - Orientación Vocacional BMV{% endblock %}
+{% block nav_inicio %}active fw-semibold{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center min-vh-60">
+            <div class="col-lg-6 py-5">
+                <p class="text-muted mb-2 fw-semibold" style="letter-spacing:.05em; font-size:.85rem;">CHARLA VOCACIONAL · METODOLOGÍA 5E</p>
+                <h1 class="display-4 fw-black mb-3" style="line-height:1.1;">
+                    Explora<br>tu <span style="color:#C0392B;">Futuro</span>
+                </h1>
+                <p class="lead text-secondary mb-4">Descubre tu perfil y elige tu camino profesional</p>
+                {% if session.get('student_id') %}
+                <a href="{{ url_for('vocacional.enganchar') }}" class="btn btn-danger btn-lg px-5 fw-bold shadow-sm">
+                    Continuar <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+                {% else %}
+                <a href="{{ url_for('vocacional.registro') }}" class="btn btn-danger btn-lg px-5 fw-bold shadow-sm">
+                    Comenzar <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+                {% endif %}
+                <p class="text-muted mt-3 small">
+                    <i class="bi bi-shield-check me-1 text-success"></i>
+                    Completamente gratuito · Sin necesidad de cuenta · Solo 15 minutos
+                </p>
+            </div>
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+                <div class="hero-illustration">
+                    <img src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=560&q=80"
+                         alt="Estudiantes explorando su futuro"
+                         class="img-fluid rounded-4 shadow-lg"
+                         style="max-height:420px; object-fit:cover; width:100%;">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Módulos -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold fs-3">Tu recorrido en 5 pasos</h2>
+            <p class="text-muted">Cada módulo te acerca más a descubrir tu vocación profesional</p>
+        </div>
+        <div class="row g-3 justify-content-center">
+            <div class="col-6 col-sm-4 col-md-2-4">
+                <a href="{{ url_for('vocacional.enganchar') }}" class="module-card mc-enganchar text-decoration-none d-block">
+                    <div class="card-num" style="font-size: 20px;">1</div>
+                    <div class="card-icon"><i class="bi bi-magnet-fill"></i></div>
+                    <div class="card-title">Enganchar</div>
+                    <div class="card-subtitle">Cuéntanos tus ideas</div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2-4">
+                <a href="{{ url_for('vocacional.explorar') }}" class="module-card mc-explorar text-decoration-none d-block">
+                    <div class="card-num" style="font-size: 20px;">2</div>
+                    <div class="card-icon"><i class="bi bi-compass-fill"></i></div>
+                    <div class="card-title">Explorar</div>
+                    <div class="card-subtitle">Descubre tu perfil</div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2-4">
+                <a href="{{ url_for('vocacional.explicar') }}" class="module-card mc-explicar text-decoration-none d-block">
+                    <div class="card-num" style="font-size: 20px;">3</div>
+                    <div class="card-icon"><i class="bi bi-book-fill"></i></div>
+                    <div class="card-title">Explicar</div>
+                    <div class="card-subtitle">Conoce tu perfil DISC</div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2-4">
+                <a href="{{ url_for('vocacional.elaborar') }}" class="module-card mc-elaborar text-decoration-none d-block">
+                    <div class="card-num" style="font-size: 20px;">4</div>
+                    <div class="card-icon"><i class="bi bi-lightbulb-fill"></i></div>
+                    <div class="card-title">Elaborar</div>
+                    <div class="card-subtitle">Usa la IA a tu favor</div>
+                </a>
+            </div>
+            <div class="col-6 col-sm-4 col-md-2-4">
+                <a href="{{ url_for('vocacional.evaluar') }}" class="module-card mc-evaluar text-decoration-none d-block">
+                    <div class="card-num" style="font-size: 20px;">5</div>
+                    <div class="card-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                    <div class="card-title">Evaluar</div>
+                    <div class="card-subtitle">Comparte y evalúa</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer tagline -->
+<footer class="py-4 text-center bg-light border-top">
+    <p class="mb-0 text-muted">Conócete, explora y construye tu mejor versión &nbsp;🚀</p>
+    <p class="mb-0 text-muted small mt-1">Instituto Tecnológico Superior Bolivar Madero Vargas &copy; {{ 2026 }}</p>
+</footer>
+
+{% endblock %}

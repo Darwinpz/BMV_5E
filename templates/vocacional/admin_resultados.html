@@ -1,0 +1,251 @@
+{% extends 'vocacional/base.html' %}
+
+{% block head %}
+<style>
+@media print {
+    .no-print, nav, .navbar { display: none !important; }
+    body { font-size: 11px; }
+    .container { max-width: 100% !important; padding: 0 !important; }
+    .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; break-inside: avoid; }
+    .table { font-size: 10px; }
+    .badge { border: 1px solid #ccc; color: #000 !important; background: #f8f9fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .progress-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    canvas { max-height: 160px !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h3 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2" style="color:#2980B9;"></i>Resultados de la Charla Vocacional</h3>
+        <p class="text-muted mb-0 small">Panel de administración · Metodología 5E</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('vocacional.nube_display') }}" target="_blank" class="btn btn-outline-primary btn-sm no-print">
+            <i class="bi bi-cloud-fill me-1"></i>Nube en vivo
+        </a>
+        <button onclick="window.print()" class="btn btn-outline-dark btn-sm no-print">
+            <i class="bi bi-printer-fill me-1"></i>Imprimir / PDF
+        </button>
+        <a href="{{ url_for('vocacional.index') }}" class="btn btn-outline-secondary btn-sm no-print">
+            <i class="bi bi-arrow-left me-1"></i>Volver al inicio
+        </a>
+    </div>
+</div>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-3" style="background:#EBF5FB;">
+            <div class="fw-black" style="font-size:2.5rem; color:#2980B9;">{{ estadisticas.total_estudiantes }}</div>
+            <div class="small text-muted fw-semibold">Estudiantes</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-3" style="background:#EAFAF1;">
+            <div class="fw-black" style="font-size:2.5rem; color:#27AE60;">{{ estadisticas.total_disc }}</div>
+            <div class="small text-muted fw-semibold">Test DISC</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-3" style="background:#FEF9E7;">
+            <div class="fw-black" style="font-size:2.5rem; color:#E67E22;">{{ estadisticas.total_tickets }}</div>
+            <div class="small text-muted fw-semibold">Tickets enviados</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 text-center p-3" style="background:#F8F9FA;">
+            <div class="fw-black" style="font-size:2.5rem; color:#2C3E50;">{{ estadisticas.avg_claridad }}</div>
+            <div class="small text-muted fw-semibold">Claridad promedio/5</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- DISC distribution -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3">Distribución de perfiles DISC</h6>
+                <div class="position-relative" style="height:220px;">
+                    <canvas id="discPieChart"></canvas>
+                    {% if estadisticas.most_common_profile %}
+                    <div class="position-absolute top-50 start-50 translate-middle text-center">
+                        <div class="fw-black fs-3" style="color:{{ profiles[estadisticas.most_common_profile].color }};">
+                            {{ estadisticas.most_common_profile }}
+                        </div>
+                        <div class="text-muted small">más común</div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="row g-2 mt-2">
+                    {% for letra, count in estadisticas.profile_counts.items() %}
+                    {% set p = profiles[letra] %}
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="badge fw-bold px-2" style="background:{{ p.color }}; font-size:.8rem; min-width:28px;">{{ letra }}</div>
+                            <div class="small">{{ p.nombre }}: <strong>{{ count }}</strong></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Career interests -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3">Carreras de mayor interés</h6>
+                {% if estadisticas.career_counts %}
+                    {% set max_count = estadisticas.career_counts.values() | list | max %}
+                    {% for carrera, count in estadisticas.career_counts.items() %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-semibold">{{ carrera }}</span>
+                            <span class="badge bg-secondary">{{ count }}</span>
+                        </div>
+                        <div class="progress" style="height:8px; border-radius:99px;">
+                            <div class="progress-bar" style="width:{{ (count / max_count * 100)|round|int }}%; background:#2980B9; border-radius:99px;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted small text-center py-4">Sin datos aún</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter bar -->
+<div class="card border-0 shadow-sm rounded-4 mb-3 no-print">
+    <div class="card-body p-3 d-flex align-items-center gap-2 flex-wrap">
+        <span class="small fw-semibold me-2">Filtrar por perfil:</span>
+        {% for label in ['TODOS', 'D', 'I', 'S', 'C'] %}
+        <a href="?perfil={{ label }}"
+           class="btn btn-sm {% if filtro_perfil == label %}btn-dark{% else %}btn-outline-secondary{% endif %} fw-semibold">
+            {% if label != 'TODOS' %}
+            <span style="color:{{ profiles[label].color if label != 'TODOS' else '#000' }};">{{ label }}</span>
+            &nbsp;{{ profiles[label].nombre if label != 'TODOS' }}
+            {% else %}Todos{% endif %}
+        </a>
+        {% endfor %}
+        <span class="ms-auto text-muted small">{{ resultados|length }} resultado(s)</span>
+    </div>
+</div>
+
+<!-- Results table -->
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        {% if resultados %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size:.88rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4 py-3">#</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Teléfono</th>
+                        <th class="text-center">Perfil DISC</th>
+                        <th class="text-center">Puntajes</th>
+                        <th>Carrera de interés</th>
+                        <th class="text-center">Claridad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resultados %}
+                    {% set s = r.student %}
+                    {% set d = r.disc %}
+                    {% set t = r.ticket %}
+                    <tr>
+                        <td class="ps-4 text-muted">{{ loop.index }}</td>
+                        <td class="fw-semibold">{{ s.nombre }}</td>
+                        <td class="text-muted">{{ s.email }}</td>
+                        <td class="text-muted">{{ s.telefono }}</td>
+                        <td class="text-center">
+                            {% if d %}
+                            {% set p = profiles[d.perfil] %}
+                            <span class="badge rounded-pill px-3 fw-bold"
+                                  style="background:{{ p.color }}; font-size:.8rem;">
+                                {{ d.perfil }} · {{ p.nombre }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if d %}
+                            <div class="d-flex justify-content-center gap-1">
+                                {% for l, pts in d.puntajes.items() %}
+                                <span title="{{ l }}: {{ pts }}" class="badge"
+                                      style="background:{{ profiles[l].color }}; font-size:.68rem;">
+                                    {{ l }}:{{ pts }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.carrera_interes if t else '—' }}</td>
+                        <td class="text-center">
+                            {% if t and t.claridad %}
+                            <span class="badge bg-dark">{{ t.claridad }}/5</span>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+            <p class="mb-0">No hay resultados para mostrar.</p>
+            {% if filtro_perfil != 'TODOS' %}
+            <a href="?perfil=TODOS" class="btn btn-sm btn-outline-secondary mt-2">Ver todos</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</div>{# close container #}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const profileData = {{ estadisticas.profile_counts | tojson }};
+const ctx = document.getElementById('discPieChart').getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['D · Dominante', 'I · Influyente', 'S · Estable', 'C · Cumplidor'],
+        datasets: [{
+            data: [profileData.D, profileData.I, profileData.S, profileData.C],
+            backgroundColor: ['#C0392B','#E67E22','#27AE60','#2980B9'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: {
+                label: ctx => ` ${ctx.label}: ${ctx.raw} estudiante(s)`
+            }}
+        }
+    }
+});
+</script>
+{% endblock %}

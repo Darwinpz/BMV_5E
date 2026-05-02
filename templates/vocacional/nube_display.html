@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nube de Palabras - BMV</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0F1923;
+            color: white;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        header {
+            text-align: center;
+            padding: 1.5rem 2rem 0.5rem;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        header h1 {
+            font-size: clamp(1rem, 2.5vw, 1.6rem);
+            font-weight: 700;
+            color: rgba(255,255,255,0.9);
+        }
+        header p {
+            color: rgba(255,255,255,0.5);
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            margin-top: 0.25rem;
+        }
+        #cloudWrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        #wordCloudCanvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        #placeholder {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+        }
+        #placeholder .icon {
+            font-size: 5rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+        #placeholder p {
+            font-size: 1.1rem;
+        }
+        footer {
+            text-align: center;
+            padding: 0.75rem;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 2rem;
+        }
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #27AE60;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>¿Si el dinero no fuera un problema, qué estarías haciendo a los 25 años?</h1>
+    <p>Instituto Tecnológico Superior Bolivar Madero Vargas · Charla Vocacional</p>
+</header>
+
+<div id="cloudWrapper">
+    <canvas id="wordCloudCanvas" style="display:none;"></canvas>
+    <div id="placeholder">
+        <span class="icon">☁️</span>
+        <p>Esperando respuestas de los estudiantes...</p>
+        <p style="font-size:.85rem; margin-top:.5rem;">Las palabras aparecerán aquí en tiempo real</p>
+    </div>
+</div>
+
+<footer>
+    <span>Metodología 5E · Orientación Vocacional</span>
+    <span id="wordCount" style="color:rgba(255,255,255,0.5);">0 respuestas</span>
+    <span><span class="pulse"></span> &nbsp;En vivo</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js"></script>
+<script>
+const COLORS = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#1ABC9C','#E91E63','#FF5722','#00BCD4'];
+let isRendering = false;
+let lastSig = null;
+
+async function refreshCloud() {
+    if (isRendering) return;
+    try {
+        const res = await fetch('/vocacional/api/palabras');
+        const words = await res.json();
+        const sig = JSON.stringify(words);
+
+        document.getElementById('wordCount').textContent = `${words.length} respuesta${words.length !== 1 ? 's' : ''}`;
+
+        if (words.length === 0) {
+            document.getElementById('placeholder').style.display = 'block';
+            document.getElementById('wordCloudCanvas').style.display = 'none';
+            lastSig = sig;
+            return;
+        }
+
+        if (sig === lastSig) return; // Sin cambios
+        lastSig = sig;
+
+        const canvas = document.getElementById('wordCloudCanvas');
+        document.getElementById('placeholder').style.display = 'none';
+        canvas.style.transition = 'opacity 0.4s';
+        canvas.style.opacity = '0.1';
+        canvas.style.display = 'block';
+
+        setTimeout(() => {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight - 120;
+
+            const maxWeight = Math.max(...words.map(w => w.weight));
+            const n = words.length;
+            const maxFont = n <= 5 ? 110 : n <= 15 ? 80 : n <= 30 ? 60 : 44;
+
+            const list = words.map(w => [
+                w.text,
+                Math.max(22, Math.round((w.weight / maxWeight) * maxFont) + 22)
+            ]);
+
+            isRendering = true;
+            WordCloud(canvas, {
+                list,
+                gridSize: 16,
+                weightFactor: 1,
+                fontFamily: 'Impact, Arial Black, sans-serif',
+                color: () => COLORS[Math.floor(Math.random() * COLORS.length)],
+                rotateRatio: 0,
+                rotationSteps: 1,
+                backgroundColor: '#0F1923',
+                shrinkToFit: true,
+                drawOutOfBound: false,
+                wait: 20,
+            });
+            canvas.style.opacity = '1';
+            setTimeout(() => { isRendering = false; }, 2000);
+        }, 400);
+    } catch (e) {
+        console.error('Error cargando nube:', e);
+        isRendering = false;
+    }
+}
+
+refreshCloud();
+setInterval(refreshCloud, 3000);
+
+window.addEventListener('resize', () => {
+    isRendering = false;
+    refreshCloud();
+});
+</script>
+</body>
+</html>
