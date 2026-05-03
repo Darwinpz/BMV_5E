@@ -217,8 +217,10 @@ def evaluar():
         return redirect(url_for('vocacional.elaborar'))
 
     perfil = disc_result.perfil
+    perfil_data = DISC_PROFILES.get(perfil)
+    carreras = perfil_data['carreras_tecnicas'] if perfil_data else CARRERAS_TECNICAS
     existing_ticket = svc.get_exit_ticket(student_id)
-    return render_template('vocacional/evaluar.html', carreras=CARRERAS_TECNICAS, perfil=perfil, existing_ticket=existing_ticket)
+    return render_template('vocacional/evaluar.html', carreras=carreras, perfil=perfil, existing_ticket=existing_ticket)
 
 
 @vocacional_bp.route('/evaluar/guardar', methods=['POST'])
