@@ -260,3 +260,59 @@ def admin_resultados():
         profiles=DISC_PROFILES,
         filtro_perfil=filtro_perfil
     )
+
+
+@vocacional_bp.route('/admin/estudiante/<student_id>', methods=['GET'])
+def admin_detalle(student_id):
+    if not _require_admin():
+        return jsonify({'error': 'No autorizado'}), 401
+    detail = get_service().get_student_detail(student_id)
+    if not detail:
+        return jsonify({'error': 'No encontrado'}), 404
+    s = detail['student']
+    d = detail['disc']
+    t = detail['ticket']
+    return jsonify({
+        'nombre': s.nombre,
+        'email': s.email,
+        'telefono': s.telefono,
+        'created_at': s.created_at.strftime('%d/%m/%Y %H:%M') if s.created_at else '—',
+        'words': detail['words'],
+        'disc': {
+            'perfil': d.perfil,
+            'puntajes': d.puntajes,
+        } if d else None,
+        'ticket': {
+            'carrera_interes': t.carrera_interes,
+            'claridad': t.claridad,
+        } if t else None,
+    })
+
+
+@vocacional_bp.route('/admin/estudiante/<student_id>/eliminar', methods=['POST'])
+def admin_eliminar(student_id):
+    if not _require_admin():
+        return jsonify({'error': 'No autorizado'}), 401
+    result = get_service().eliminar_estudiante(student_id)
+    if result['success']:
+        flash(f'Registro de {result["nombre"]} eliminado correctamente.', 'success')
+    else:
+        flash(result['message'], 'danger')
+    return redirect(url_for('vocacional.admin_resultados'))
+
+
+@vocacional_bp.route('/admin/reporte', methods=['GET'])
+def admin_reporte():
+    if not _require_admin():
+        return redirect(url_for('users.login'))
+    svc = get_service()
+    resultados = svc.get_all_resultados()
+    estadisticas = svc.get_estadisticas()
+    from datetime import datetime
+    return render_template(
+        'vocacional/admin_reporte.html',
+        resultados=resultados,
+        estadisticas=estadisticas,
+        profiles=DISC_PROFILES,
+        fecha=datetime.now().strftime('%d/%m/%Y %H:%M'),
+    )

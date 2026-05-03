@@ -23,3 +23,6 @@ class DiscResultRepository:
 
     def find_all(self):
         return [DiscResultModel.from_dict(d) for d in self.collection.find()]
+
+    def delete_by_student_id(self, student_id: str):
+        self.collection.delete_many({'student_id': student_id})

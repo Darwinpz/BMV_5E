@@ -16,6 +16,9 @@ class ExitTicketRepository:
     def find_all(self):
         return [ExitTicketModel.from_dict(d) for d in self.collection.find().sort('created_at', -1)]
 
+    def delete_by_student_id(self, student_id: str):
+        self.collection.delete_many({'student_id': student_id})
+
     def count_by_carrera(self) -> dict:
         pipeline = [
             {'$group': {'_id': '$carrera_interes', 'total': {'$sum': 1}}},

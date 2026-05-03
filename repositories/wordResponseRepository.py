@@ -19,3 +19,6 @@ class WordResponseRepository:
 
     def find_by_student(self, student_id: str) -> list:
         return list(self.collection.find({'student_id': student_id}))
+
+    def delete_by_student_id(self, student_id: str):
+        self.collection.delete_many({'student_id': student_id})

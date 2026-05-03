@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Vocacional – BMV</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #222; background: white; }
+        .report-header { background: #2C3E50; color: white; padding: 18px 24px; margin-bottom: 20px; }
+        .report-header h4 { margin: 0; font-size: 1.1rem; }
+        .report-header p { margin: 2px 0 0; font-size: .78rem; opacity: .8; }
+        .stat-box { border: 1px solid #dee2e6; border-radius: 6px; padding: 10px 14px; text-align: center; }
+        .stat-box .num { font-size: 1.6rem; font-weight: 700; }
+        .disc-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; color: white; font-weight: 700; font-size: .75rem; }
+        .score-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; color: white; font-size: .68rem; margin: 1px; }
+        table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        thead th { background: #f1f3f5; padding: 7px 8px; border-bottom: 2px solid #dee2e6; font-weight: 600; }
+        tbody td { padding: 6px 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: none; }
+        .no-print { display: block; }
+        @media print {
+            .no-print { display: none !important; }
+            body { font-size: 10px; }
+            .report-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .disc-badge, .score-badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print text-end p-2" style="background:#f8f9fa; border-bottom:1px solid #dee2e6;">
+    <button onclick="window.print()" class="btn btn-dark btn-sm">
+        🖨️ Imprimir / Guardar como PDF
+    </button>
+    <button onclick="window.close()" class="btn btn-outline-secondary btn-sm ms-2">Cerrar</button>
+</div>
+
+<div class="report-header">
+    <h4>Reporte de Resultados – Charla Vocacional</h4>
+    <p>Instituto Tecnológico Bolivar Madero Vargas &nbsp;·&nbsp; Metodología 5E &nbsp;·&nbsp; Generado: {{ fecha }}</p>
+</div>
+
+<div class="px-4">
+
+    <!-- Summary stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-3">
+            <div class="stat-box">
+                <div class="num" style="color:#2980B9;">{{ estadisticas.total_estudiantes }}</div>
+                <div class="text-muted" style="font-size:.72rem;">Estudiantes</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="stat-box">
+                <div class="num" style="color:#27AE60;">{{ estadisticas.total_disc }}</div>
+                <div class="text-muted" style="font-size:.72rem;">Tests DISC</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="stat-box">
+                <div class="num" style="color:#E67E22;">{{ estadisticas.total_tickets }}</div>
+                <div class="text-muted" style="font-size:.72rem;">Tickets</div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="stat-box">
+                <div class="num" style="color:#2C3E50;">{{ estadisticas.avg_claridad }}</div>
+                <div class="text-muted" style="font-size:.72rem;">Claridad prom./5</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DISC profile summary + careers side by side -->
+    <div class="row g-3 mb-4">
+        <div class="col-6">
+            <div class="card border rounded-3 p-3">
+                <div class="fw-semibold mb-2" style="font-size:.8rem;">Distribución de perfiles DISC</div>
+                {% for letra, count in estadisticas.profile_counts.items() %}
+                {% set colors = {'D':'#C0392B','I':'#E67E22','S':'#27AE60','C':'#2980B9'} %}
+                {% set nombres = {'D':'Dominante','I':'Influyente','S':'Estable','C':'Cumplidor'} %}
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="disc-badge" style="background:{{ colors[letra] }}; min-width:26px; text-align:center;">{{ letra }}</span>
+                    <span style="font-size:.78rem;">{{ nombres[letra] }}</span>
+                    <span class="ms-auto fw-bold">{{ count }}</span>
+                    {% if estadisticas.total_disc > 0 %}
+                    <span class="text-muted" style="font-size:.7rem; min-width:32px; text-align:right;">
+                        {{ (count / estadisticas.total_disc * 100) | round(1) }}%
+                    </span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card border rounded-3 p-3">
+                <div class="fw-semibold mb-2" style="font-size:.8rem;">Carreras de mayor interés</div>
+                {% if estadisticas.career_counts %}
+                    {% for carrera, count in estadisticas.career_counts.items() %}
+                    <div class="d-flex justify-content-between mb-1" style="font-size:.78rem;">
+                        <span>{{ carrera }}</span>
+                        <span class="fw-bold">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted" style="font-size:.78rem;">Sin datos</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Full registrations table -->
+    <div class="fw-semibold mb-2" style="font-size:.85rem;">Listado completo de registros ({{ resultados|length }})</div>
+    <table>
+        <thead>
+            <tr>
+                <th style="width:30px;">#</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th style="text-align:center;">Perfil</th>
+                <th style="text-align:center;">Puntajes DISC</th>
+                <th>Carrera de interés</th>
+                <th style="text-align:center;">Claridad</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in resultados %}
+            {% set s = r.student %}
+            {% set d = r.disc %}
+            {% set t = r.ticket %}
+            {% set colors = {'D':'#C0392B','I':'#E67E22','S':'#27AE60','C':'#2980B9'} %}
+            <tr>
+                <td class="text-muted">{{ loop.index }}</td>
+                <td><strong>{{ s.nombre }}</strong></td>
+                <td>{{ s.email }}</td>
+                <td>{{ s.telefono }}</td>
+                <td style="text-align:center;">
+                    {% if d %}
+                    <span class="disc-badge" style="background:{{ colors[d.perfil] }};">{{ d.perfil }}</span>
+                    {% else %}—{% endif %}
+                </td>
+                <td style="text-align:center;">
+                    {% if d %}
+                        {% for l, pts in d.puntajes.items() %}
+                        <span class="score-badge" style="background:{{ colors[l] }};">{{ l }}:{{ pts }}</span>
+                        {% endfor %}
+                    {% else %}—{% endif %}
+                </td>
+                <td>{{ t.carrera_interes if t else '—' }}</td>
+                <td style="text-align:center;">
+                    {% if t and t.claridad %}{{ t.claridad }}/5{% else %}—{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-muted mt-4 mb-3" style="font-size:.7rem; border-top:1px solid #dee2e6; padding-top:8px;">
+        Reporte generado automáticamente por el sistema BMV 5E · {{ fecha }}
+    </div>
+</div>
+
+<script>
+    window.addEventListener('load', () => setTimeout(() => window.print(), 400));
+</script>
+</body>
+</html>

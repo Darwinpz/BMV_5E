@@ -97,6 +97,25 @@ class VocacionalService:
     def get_student(self, student_id: str):
         return self.student_repo.find_by_id(student_id)
 
+    def get_student_detail(self, student_id: str) -> dict | None:
+        student = self.student_repo.find_by_id(student_id)
+        if not student:
+            return None
+        disc = self.disc_repo.find_by_student_id(student_id)
+        ticket = self.ticket_repo.find_by_student_id(student_id)
+        words = [w['palabra'] for w in self.word_repo.find_by_student(student_id)]
+        return {'student': student, 'disc': disc, 'ticket': ticket, 'words': words}
+
+    def eliminar_estudiante(self, student_id: str) -> dict:
+        student = self.student_repo.find_by_id(student_id)
+        if not student:
+            return {'success': False, 'message': 'Estudiante no encontrado.'}
+        self.word_repo.delete_by_student_id(student_id)
+        self.disc_repo.delete_by_student_id(student_id)
+        self.ticket_repo.delete_by_student_id(student_id)
+        self.student_repo.delete_by_id(student_id)
+        return {'success': True, 'nombre': student.nombre}
+
     def get_all_resultados(self) -> list:
         students = self.student_repo.find_all()
         results = []

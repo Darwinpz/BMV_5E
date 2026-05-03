@@ -24,3 +24,6 @@ class StudentRepository:
 
     def find_all(self):
         return [StudentModel.from_dict(d) for d in self.collection.find().sort('created_at', -1)]
+
+    def delete_by_id(self, student_id: str):
+        self.collection.delete_one({'_id': ObjectId(student_id)})
