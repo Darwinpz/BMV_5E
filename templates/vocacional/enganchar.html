@@ -30,9 +30,10 @@
 
                     <label class="form-label fw-semibold small">Escribe hasta 3 respuestas</label>
                     <div class="input-group mb-2">
-                        <input type="text" id="wordInput" class="form-control rounded-start-3" maxlength="50"
-                               placeholder="Escribe tu respuesta..." id="wordInput">
-                        <span class="input-group-text text-muted small" id="charCount">0/50</span>
+                        <input type="text" id="wordInput" class="form-control rounded-start-3" maxlength="25"
+                               placeholder="Máx. 25 caracteres..."
+                               {% if word_count >= 3 %}disabled{% endif %}>
+                        <span class="input-group-text text-muted small" id="charCount">0/25</span>
                     </div>
                     <div id="wordError" class="text-danger small mb-2 d-none"></div>
 
@@ -59,8 +60,8 @@
                     <div id="submittedWords" class="mt-3">
                         {% if word_count > 0 %}
                         <p class="text-muted small mb-2">Tus respuestas:</p>
-                        <div id="myWordBadges"></div>
                         {% endif %}
+                        <div id="myWordBadges"></div>
                     </div>
                 </div>
             </div>
@@ -83,11 +84,18 @@
                             </a>
                         </div>
                     </div>
-                    <div class="word-cloud-container rounded-3" style="min-height:380px; background:#FAFAFA; border:1px solid #F0F0F0; position:relative;">
-                        <canvas id="wordCloudCanvas" style="display:none; position:absolute; top:0; left:0;"></canvas>
-                        <div id="cloudPlaceholder" class="d-flex flex-column align-items-center justify-content-center text-muted" style="min-height:380px; position:absolute; inset:0;">
+                    <div id="cloudContainer" class="rounded-3" style="height:380px; background:#FAFAFA; border:1px solid #F0F0F0; position:relative; overflow:hidden; cursor:grab; user-select:none;">
+                        <!-- Canvas on top (z-index 2), placeholder behind (z-index 1) -->
+                        <canvas id="wordCloudCanvas" style="display:none; position:absolute; top:0; left:0; z-index:2; transform-origin:center center;"></canvas>
+                        <div id="cloudPlaceholder" class="d-flex flex-column align-items-center justify-content-center text-muted" style="position:absolute; inset:0; z-index:1; pointer-events:none;">
                             <i class="bi bi-cloud fs-1 mb-2 opacity-50"></i>
                             <span class="small">Esperando respuestas...</span>
+                        </div>
+                        <!-- Zoom controls overlay -->
+                        <div style="position:absolute; bottom:8px; right:8px; z-index:4; display:flex; gap:4px;">
+                            <button onclick="adjustCloudZoom(1.2)" class="btn btn-sm btn-light border opacity-75 px-2 py-0" style="font-size:.8rem; line-height:1.6;" title="Acercar">+</button>
+                            <button onclick="adjustCloudZoom(0.83)" class="btn btn-sm btn-light border opacity-75 px-2 py-0" style="font-size:.8rem; line-height:1.6;" title="Alejar">−</button>
+                            <button onclick="resetCloudZoom()" class="btn btn-sm btn-light border opacity-75 px-2 py-0" style="font-size:.65rem; line-height:1.6;" title="Restablecer">↺</button>
                         </div>
                     </div>
                 </div>
@@ -112,25 +120,26 @@
 <script>
 const csrfToken = '{{ csrf_token() }}';
 let wordCount = {{ word_count }};
-let myWords = [];
+let myWords = {{ my_words | tojson }};
 
-const wordInput = document.getElementById('wordInput');
-const btnEnviar = document.getElementById('btnEnviar');
-const sentCount = document.getElementById('sentCount');
-const wordError = document.getElementById('wordError');
-const charCount = document.getElementById('charCount');
+const wordInput   = document.getElementById('wordInput');
+const btnEnviar   = document.getElementById('btnEnviar');
+const sentCount   = document.getElementById('sentCount');
+const wordError   = document.getElementById('wordError');
+const charCount   = document.getElementById('charCount');
 const totalWordsEl = document.getElementById('totalWords');
 const cloudPlaceholder = document.getElementById('cloudPlaceholder');
+const canvas = document.getElementById('wordCloudCanvas');
+
+// Render existing words as badges on load
+if (myWords.length > 0) renderMyBadges();
 
 wordInput.addEventListener('input', () => {
-    const len = wordInput.value.length;
-    charCount.textContent = `${len}/50`;
+    charCount.textContent = `${wordInput.value.length}/25`;
 });
-
 wordInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); enviarPalabra(); }
 });
-
 btnEnviar.addEventListener('click', enviarPalabra);
 
 async function enviarPalabra() {
@@ -161,8 +170,10 @@ async function enviarPalabra() {
                 btnEnviar.disabled = true;
                 wordInput.disabled = true;
                 showSuccess('¡Gracias! Ya enviaste tus 3 respuestas.');
+                if (cloudInterval) { clearInterval(cloudInterval); cloudInterval = null; }
+                refreshWordCloud(); // final refresh to include this word
             } else {
-                btnEnviar.disabled = false;  // Re-habilitar para más respuestas
+                btnEnviar.disabled = false;
                 wordInput.focus();
             }
         } else {
@@ -191,12 +202,20 @@ function showSuccess(msg) {
 function renderMyBadges() {
     const container = document.getElementById('myWordBadges');
     if (!container) return;
+    // Ensure label exists
+    const sub = document.getElementById('submittedWords');
+    if (!sub.querySelector('p') && myWords.length > 0) {
+        const label = document.createElement('p');
+        label.className = 'text-muted small mb-2';
+        label.textContent = 'Tus respuestas:';
+        sub.insertBefore(label, container);
+    }
     container.innerHTML = myWords.map(w =>
         `<span class="badge bg-danger-subtle text-danger me-1 mb-1 px-3 py-2">${w}</span>`
     ).join('');
 }
 
-// Word cloud rendering — only re-draws when words change
+// Word cloud — signature-based refresh, Mentimeter-style rotation
 let lastWordSig = null;
 let cloudRendering = false;
 const CLOUD_COLORS = ['#C0392B','#E67E22','#27AE60','#2980B9','#8E44AD','#16A085','#D35400','#1A5276','#E91E63','#00BCD4'];
@@ -208,9 +227,9 @@ async function refreshWordCloud() {
         const words = await res.json();
         const sig = JSON.stringify(words);
 
-        totalWordsEl.textContent = words.length > 0 ? `${words.length} palabra${words.length !== 1 ? 's' : ''}` : 'Sin respuestas aún';
-
-        const canvas = document.getElementById('wordCloudCanvas');
+        totalWordsEl.textContent = words.length > 0
+            ? `${words.length} palabra${words.length !== 1 ? 's' : ''}`
+            : 'Sin respuestas aún';
 
         if (words.length === 0) {
             cloudPlaceholder.style.display = 'flex';
@@ -219,47 +238,50 @@ async function refreshWordCloud() {
             return;
         }
 
-        if (sig === lastWordSig) return; // Sin cambios, no redibujar
+        if (sig === lastWordSig) return;
         lastWordSig = sig;
 
         cloudRendering = true;
         cloudPlaceholder.style.display = 'none';
+        canvas.style.opacity = '0.1';
+        canvas.style.transition = 'opacity 0.35s ease';
         canvas.style.display = 'block';
-        canvas.style.transition = 'opacity 0.3s ease';
-        canvas.style.opacity = '0.2';
 
         setTimeout(() => {
-            const container = canvas.parentElement;
+            const container = document.getElementById('cloudContainer');
             canvas.width  = container.offsetWidth  || 500;
-            canvas.height = 380;
+            canvas.height = container.offsetHeight || 380;
 
             const maxWeight = Math.max(...words.map(w => w.weight));
             const n = words.length;
-            // Adaptive max font size: fewer words → bigger text
-            const maxFont = n <= 5 ? 72 : n <= 15 ? 52 : n <= 30 ? 38 : 28;
+            // Size cap: font must fit all words in the canvas area
+            const fitFont  = Math.round(Math.sqrt((canvas.width * canvas.height) / (n * 14)));
+            const baseFont = n <= 3 ? 46 : n <= 7 ? 36 : n <= 15 ? 28 : n <= 30 ? 22 : 16;
+            const maxFont  = Math.min(baseFont, fitFont);
+            const minFont  = Math.max(11, Math.round(maxFont * 0.5));
 
             const list = words.map(w => [
                 w.text,
-                Math.max(16, Math.round((w.weight / maxWeight) * maxFont) + 16)
+                Math.max(minFont, Math.round((w.weight / maxWeight) * maxFont))
             ]);
 
             WordCloud(canvas, {
                 list,
-                gridSize: 10,
+                gridSize: 6,
                 weightFactor: 1,
                 fontFamily: 'Impact, Arial Black, sans-serif',
                 color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
-                rotateRatio: 0,
-                rotationSteps: 1,
+                rotateRatio: 0.4,
+                rotationSteps: 2,
                 backgroundColor: '#FAFAFA',
                 shrinkToFit: true,
                 drawOutOfBound: false,
-                wait: 15,
+                wait: 8,
             });
 
             canvas.style.opacity = '1';
             setTimeout(() => { cloudRendering = false; }, 800);
-        }, 300);
+        }, 250);
     } catch (e) {
         cloudRendering = false;
         console.error('Error cargando nube:', e);
@@ -267,6 +289,57 @@ async function refreshWordCloud() {
 }
 
 refreshWordCloud();
-setInterval(refreshWordCloud, 3500);
+// Only keep polling while the student hasn't yet submitted all 3 words
+let cloudInterval = null;
+if (wordCount < 3) {
+    cloudInterval = setInterval(refreshWordCloud, 3500);
+}
+
+// ── Zoom / Pan for cloudContainer ─────────────────────────────────────────────
+let cloudScale = 1, cloudTx = 0, cloudTy = 0;
+let cpDown = false, cpX = 0, cpY = 0, cpTxStart = 0, cpTyStart = 0;
+const cloudContainer = document.getElementById('cloudContainer');
+
+function applyCloudTransform() {
+    canvas.style.transform = `translate(${cloudTx}px,${cloudTy}px) scale(${cloudScale})`;
+}
+function cloudClamp() {
+    if (cloudScale <= 1) { cloudTx = 0; cloudTy = 0; return; }
+    const maxX = canvas.offsetWidth  * (cloudScale - 1) / 2;
+    const maxY = canvas.offsetHeight * (cloudScale - 1) / 2;
+    cloudTx = Math.max(-maxX, Math.min(maxX, cloudTx));
+    cloudTy = Math.max(-maxY, Math.min(maxY, cloudTy));
+}
+function adjustCloudZoom(factor) {
+    cloudScale = Math.max(0.5, Math.min(5, cloudScale * factor));
+    cloudClamp(); applyCloudTransform();
+}
+function resetCloudZoom() {
+    cloudScale = 1; cloudTx = 0; cloudTy = 0; applyCloudTransform();
+}
+
+cloudContainer.addEventListener('wheel', e => {
+    e.preventDefault();
+    cloudScale = Math.max(0.5, Math.min(5, cloudScale * (e.deltaY < 0 ? 1.1 : 0.91)));
+    cloudClamp(); applyCloudTransform();
+}, { passive: false });
+
+cloudContainer.addEventListener('pointerdown', e => {
+    if (e.target.tagName === 'BUTTON') return; // don't drag on zoom buttons
+    cpDown = true;
+    cpX = e.clientX; cpY = e.clientY;
+    cpTxStart = cloudTx; cpTyStart = cloudTy;
+    cloudContainer.setPointerCapture(e.pointerId);
+    cloudContainer.style.cursor = 'grabbing';
+});
+cloudContainer.addEventListener('pointermove', e => {
+    if (!cpDown) return;
+    cloudTx = cpTxStart + (e.clientX - cpX);
+    cloudTy = cpTyStart + (e.clientY - cpY);
+    cloudClamp(); applyCloudTransform();
+});
+cloudContainer.addEventListener('pointerup',     () => { cpDown = false; cloudContainer.style.cursor = 'grab'; });
+cloudContainer.addEventListener('pointercancel', () => { cpDown = false; cloudContainer.style.cursor = 'grab'; });
+cloudContainer.addEventListener('dblclick', e => { if (e.target.tagName !== 'BUTTON') resetCloudZoom(); });
 </script>
 {% endblock %}

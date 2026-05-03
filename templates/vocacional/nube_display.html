@@ -3,80 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nube de Palabras - BMV</title>
+    <title>Nube de Palabras – BMV</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #0F1923;
-            color: white;
+            background: #fff;
             font-family: 'Segoe UI', system-ui, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            user-select: none;
         }
         header {
             text-align: center;
-            padding: 1.5rem 2rem 0.5rem;
-            background: rgba(255,255,255,0.04);
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 1rem 2rem 0.7rem;
+            background: #2C3E50;
+            color: white;
+            flex-shrink: 0;
         }
         header h1 {
-            font-size: clamp(1rem, 2.5vw, 1.6rem);
+            font-size: clamp(.9rem, 2.2vw, 1.45rem);
             font-weight: 700;
-            color: rgba(255,255,255,0.9);
         }
         header p {
             color: rgba(255,255,255,0.5);
-            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
-            margin-top: 0.25rem;
+            font-size: clamp(0.65rem, 1.2vw, 0.82rem);
+            margin-top: .25rem;
         }
         #cloudWrapper {
             flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
+            overflow: hidden;
+            background: #fff;
+            cursor: grab;
         }
+        #cloudWrapper.grabbing { cursor: grabbing; }
         #wordCloudCanvas {
-            max-width: 100%;
-            max-height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            display: none;
+            transform-origin: center center;
         }
         #placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
             text-align: center;
-            color: rgba(255,255,255,0.3);
+            gap: .75rem;
+            pointer-events: none;
         }
-        #placeholder .icon {
-            font-size: 5rem;
-            display: block;
-            margin-bottom: 1rem;
-        }
-        #placeholder p {
-            font-size: 1.1rem;
-        }
+        #placeholder .icon { font-size: 5rem; }
+        #placeholder p     { font-size: 1rem;  color: #bbb; }
+        #placeholder small  { font-size: .8rem; color: #ddd; }
         footer {
-            text-align: center;
-            padding: 0.75rem;
-            color: rgba(255,255,255,0.3);
-            font-size: 0.8rem;
-            border-top: 1px solid rgba(255,255,255,0.05);
+            flex-shrink: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0.75rem 2rem;
+            padding: .55rem 1.5rem;
+            color: #888;
+            font-size: .78rem;
+            border-top: 1px solid #e9ecef;
+            background: #f8f9fa;
         }
         .pulse {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             background: #27AE60;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
+            0%,100% { opacity:1; transform:scale(1); }
+            50%      { opacity:.4; transform:scale(.75); }
         }
+        #zoomCtrl { display:flex; align-items:center; gap:5px; }
+        #zoomCtrl button {
+            background: #e9ecef; border: 1px solid #dee2e6; color: #495057;
+            border-radius: 6px; width: 28px; height: 28px;
+            font-size: .92rem; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        #zoomCtrl button:hover { background: #dee2e6; }
+        #zoomCtrl .btn-r { width:auto; padding:0 8px; font-size:.7rem; font-weight:normal; }
+        #zoomLbl { font-size:.72rem; min-width:38px; text-align:center; color:#aaa; }
     </style>
 </head>
 <body>
@@ -87,92 +103,218 @@
 </header>
 
 <div id="cloudWrapper">
-    <canvas id="wordCloudCanvas" style="display:none;"></canvas>
+    <canvas id="wordCloudCanvas"></canvas>
     <div id="placeholder">
         <span class="icon">☁️</span>
         <p>Esperando respuestas de los estudiantes...</p>
-        <p style="font-size:.85rem; margin-top:.5rem;">Las palabras aparecerán aquí en tiempo real</p>
+        <small>Las palabras aparecerán aquí en tiempo real</small>
     </div>
 </div>
 
 <footer>
     <span>Metodología 5E · Orientación Vocacional</span>
-    <span id="wordCount" style="color:rgba(255,255,255,0.5);">0 respuestas</span>
-    <span><span class="pulse"></span> &nbsp;En vivo</span>
+    <div id="zoomCtrl">
+        <button id="btnZOut"     title="Alejar">−</button>
+        <span id="zoomLbl">100%</span>
+        <button id="btnZIn"      title="Acercar">+</button>
+        <button id="btnZRst"     class="btn-r" title="Restablecer vista">Reset</button>
+        <button id="btnRefresh"  class="btn-r" title="Forzar actualización" style="margin-left:6px;">↻ Actualizar</button>
+    </div>
+    <span>
+        <span id="wordCount" style="margin-right:.8rem;">0 respuestas</span>
+        <span class="pulse"></span>&nbsp;En vivo
+    </span>
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.1.0/wordcloud2.min.js"></script>
 <script>
-const COLORS = ['#E74C3C','#E67E22','#F1C40F','#2ECC71','#3498DB','#9B59B6','#1ABC9C','#E91E63','#FF5722','#00BCD4'];
-let isRendering = false;
-let lastSig = null;
+// Vibrant colors on white background
+const COLORS = ['#E53935','#D81B60','#8E24AA','#3949AB','#039BE5','#00897B',
+                '#43A047','#F4511E','#1E88E5','#00ACC1','#7CB342','#E91E63',
+                '#FF6F00','#4527A0','#00838F'];
+
+const canvas  = document.getElementById('wordCloudCanvas');
+const wrapper = document.getElementById('cloudWrapper');
+const ph      = document.getElementById('placeholder');
+const zoomLbl = document.getElementById('zoomLbl');
+
+// ── Zoom / Pan ────────────────────────────────────────────────────────────────
+let scale = 1, tx = 0, ty = 0;
+let pDown = false, pX = 0, pY = 0, txStart = 0, tyStart = 0;
+
+function applyT() {
+    canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+    zoomLbl.textContent = `${Math.round(scale * 100)}%`;
+}
+function clamp() {
+    if (scale <= 1) { tx = 0; ty = 0; return; }
+    const mx = canvas.width  * (scale - 1) / 2;
+    const my = canvas.height * (scale - 1) / 2;
+    tx = Math.max(-mx, Math.min(mx, tx));
+    ty = Math.max(-my, Math.min(my, ty));
+}
+function resetView() { scale = 1; tx = 0; ty = 0; applyT(); }
+
+wrapper.addEventListener('wheel', e => {
+    e.preventDefault();
+    scale = Math.max(0.3, Math.min(5, scale * (e.deltaY < 0 ? 1.1 : 0.91)));
+    clamp(); applyT();
+}, { passive: false });
+
+wrapper.addEventListener('pointerdown', e => {
+    pDown = true;
+    pX = e.clientX; pY = e.clientY;
+    txStart = tx;    tyStart = ty;
+    wrapper.setPointerCapture(e.pointerId);
+    wrapper.classList.add('grabbing');
+});
+wrapper.addEventListener('pointermove', e => {
+    if (!pDown) return;
+    tx = txStart + (e.clientX - pX);
+    ty = tyStart + (e.clientY - pY);
+    clamp(); applyT();
+});
+wrapper.addEventListener('pointerup',     () => { pDown = false; wrapper.classList.remove('grabbing'); });
+wrapper.addEventListener('pointercancel', () => { pDown = false; wrapper.classList.remove('grabbing'); });
+wrapper.addEventListener('dblclick', resetView);
+
+document.getElementById('btnZIn'    ).addEventListener('click', () => { scale = Math.min(scale * 1.25, 5); clamp(); applyT(); });
+document.getElementById('btnZOut'   ).addEventListener('click', () => { scale = Math.max(scale * 0.8,  0.3); clamp(); applyT(); });
+document.getElementById('btnZRst'   ).addEventListener('click', resetView);
+document.getElementById('btnRefresh').addEventListener('click', () => {
+    lastDoneSig = null;
+    pendingSig  = null;
+    refreshCloud();
+});
+
+// ── Word Cloud — robust rendering with drawId + wordcloudstop ─────────────────
+let drawId = 0;           // increments on every new draw request; stale draws see myId !== drawId
+let lastDoneSig = null;   // sig of the LAST COMPLETED draw (set only in wordcloudstop)
+let pendingSig  = null;   // sig currently being drawn (prevents re-queuing the same sig)
 
 async function refreshCloud() {
-    if (isRendering) return;
     try {
-        const res = await fetch('/vocacional/api/palabras');
+        const res   = await fetch('/vocacional/api/palabras');
         const words = await res.json();
-        const sig = JSON.stringify(words);
+        const sig   = JSON.stringify(words);
 
-        document.getElementById('wordCount').textContent = `${words.length} respuesta${words.length !== 1 ? 's' : ''}`;
+        document.getElementById('wordCount').textContent =
+            `${words.length} respuesta${words.length !== 1 ? 's' : ''}`;
 
         if (words.length === 0) {
-            document.getElementById('placeholder').style.display = 'block';
-            document.getElementById('wordCloudCanvas').style.display = 'none';
-            lastSig = sig;
+            ph.style.display     = 'flex';
+            canvas.style.display = 'none';
+            lastDoneSig = null;
+            pendingSig  = null;
             return;
         }
 
-        if (sig === lastSig) return; // Sin cambios
-        lastSig = sig;
+        // Skip only when COMPLETED draw matches current sig
+        if (sig === lastDoneSig) return;
+        // Skip if we're already drawing this exact sig
+        if (sig === pendingSig)  return;
 
-        const canvas = document.getElementById('wordCloudCanvas');
-        document.getElementById('placeholder').style.display = 'none';
-        canvas.style.transition = 'opacity 0.4s';
-        canvas.style.opacity = '0.1';
-        canvas.style.display = 'block';
-
-        setTimeout(() => {
-            canvas.width  = window.innerWidth;
-            canvas.height = window.innerHeight - 120;
-
-            const maxWeight = Math.max(...words.map(w => w.weight));
-            const n = words.length;
-            const maxFont = n <= 5 ? 110 : n <= 15 ? 80 : n <= 30 ? 60 : 44;
-
-            const list = words.map(w => [
-                w.text,
-                Math.max(22, Math.round((w.weight / maxWeight) * maxFont) + 22)
-            ]);
-
-            isRendering = true;
-            WordCloud(canvas, {
-                list,
-                gridSize: 16,
-                weightFactor: 1,
-                fontFamily: 'Impact, Arial Black, sans-serif',
-                color: () => COLORS[Math.floor(Math.random() * COLORS.length)],
-                rotateRatio: 0,
-                rotationSteps: 1,
-                backgroundColor: '#0F1923',
-                shrinkToFit: true,
-                drawOutOfBound: false,
-                wait: 20,
-            });
-            canvas.style.opacity = '1';
-            setTimeout(() => { isRendering = false; }, 2000);
-        }, 400);
+        pendingSig = sig;
+        drawCloud(words, sig);
     } catch (e) {
         console.error('Error cargando nube:', e);
-        isRendering = false;
     }
+}
+
+function drawCloud(words, sig) {
+    const myId = ++drawId;
+
+    ph.style.display     = 'none';
+    canvas.style.opacity = '0.05';
+    canvas.style.transition = 'opacity 0.4s';
+    canvas.style.display = 'block';
+
+    setTimeout(() => {
+        if (myId !== drawId) return; // superseded by a newer draw request
+
+        const W = wrapper.offsetWidth  || window.innerWidth;
+        const H = wrapper.offsetHeight || (window.innerHeight - 100);
+
+        if (W < 10 || H < 10) {
+            // Dimensions not ready — let next interval retry
+            pendingSig = null;
+            return;
+        }
+
+        // Resizing the canvas clears it (standard browser behaviour)
+        canvas.width  = W;
+        canvas.height = H;
+
+        // Compute word list with adaptive, length-aware font sizes.
+        // Each word is capped so it physically fits in BOTH orientations
+        // (horizontal = width constraint, vertical = height constraint).
+        // This prevents wordcloud2 from silently skipping words that are
+        // too long to place in the randomly-chosen rotation.
+        const maxWeight = Math.max(...words.map(w => w.weight));
+        const n = words.length;
+        const fitFont  = Math.round(Math.sqrt((W * H) / (n * 10)));
+        const baseFont = n <= 3  ? 100 : n <= 7  ? 80 : n <= 14 ? 62
+                       : n <= 22 ? 50  : n <= 40 ? 38 : 28;
+        const globalMax = Math.min(baseFont, fitFont);
+        const minFont   = 14;
+        // Impact font: ~0.56 em width per char is a good approximation
+        const CHAR_W = 0.56;
+
+        const list = words.map(w => {
+            const raw     = Math.max(minFont, Math.round((w.weight / maxWeight) * globalMax));
+            const maxByH  = Math.floor((W * 0.88) / (w.text.length * CHAR_W)); // horizontal fit
+            const maxByV  = Math.floor((H * 0.88) / (w.text.length * CHAR_W)); // vertical fit
+            // Use the min so the word fits regardless of which rotation wordcloud2 picks
+            const capFont = Math.max(minFont, Math.min(maxByH, maxByV));
+            return [w.text, Math.min(raw, capFont)];
+        });
+
+        // Listen for wordcloudstop — fired when rendering is truly finished
+        function onStop() {
+            canvas.removeEventListener('wordcloudstop', onStop);
+            clearTimeout(fallbackTimer);
+            if (myId === drawId) {
+                lastDoneSig = sig;
+                pendingSig  = null;
+                canvas.style.opacity = '1';
+            }
+        }
+        canvas.addEventListener('wordcloudstop', onStop);
+
+        // Fallback: mark complete after 5s even if event doesn't fire
+        const fallbackTimer = setTimeout(() => {
+            canvas.removeEventListener('wordcloudstop', onStop);
+            if (myId === drawId) {
+                lastDoneSig = sig;
+                pendingSig  = null;
+                canvas.style.opacity = '1';
+            }
+        }, 5000);
+
+        WordCloud(canvas, {
+            list,
+            gridSize: 8,
+            weightFactor: 1,
+            fontFamily: 'Impact, Arial Black, sans-serif',
+            color: () => COLORS[Math.floor(Math.random() * COLORS.length)],
+            rotateRatio: 0.4,
+            rotationSteps: 2,
+            backgroundColor: '#ffffff',
+            shrinkToFit: false,   // disabled — font sizes are pre-calculated to fit
+            drawOutOfBound: false,
+            wait: 16,
+        });
+
+    }, 300);
 }
 
 refreshCloud();
 setInterval(refreshCloud, 3000);
 
 window.addEventListener('resize', () => {
-    isRendering = false;
+    lastDoneSig = null;
+    pendingSig  = null;
+    resetView();
     refreshCloud();
 });
 </script>

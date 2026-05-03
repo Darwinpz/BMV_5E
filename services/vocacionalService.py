@@ -39,9 +39,9 @@ class VocacionalService:
     def agregar_palabra(self, palabra: str, student_id: str) -> dict:
         palabra = palabra.strip() if palabra else ''
         if len(palabra) < 2:
-            return {'success': False, 'message': 'La palabra debe tener al menos 2 caracteres.'}
-        if len(palabra) > 50:
-            return {'success': False, 'message': 'La respuesta es demasiado larga (máx. 50 caracteres).'}
+            return {'success': False, 'message': 'La respuesta debe tener al menos 2 caracteres.'}
+        if len(palabra) > 25:
+            return {'success': False, 'message': 'La respuesta es demasiado larga (máx. 25 caracteres).'}
 
         count = self.word_repo.count_by_student(student_id)
         if count >= 3:
@@ -58,6 +58,9 @@ class VocacionalService:
 
     def count_palabras_student(self, student_id: str) -> int:
         return self.word_repo.count_by_student(student_id)
+
+    def get_student_words(self, student_id: str) -> list:
+        return [d['palabra'] for d in self.word_repo.find_by_student(student_id)]
 
     def guardar_disc_result(self, student_id: str, respuestas: dict) -> dict:
         puntajes = {'D': 0, 'I': 0, 'S': 0, 'C': 0}

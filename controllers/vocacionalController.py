@@ -79,8 +79,10 @@ def enganchar():
     if not student_id:
         return redirect(url_for('vocacional.registro'))
 
-    word_count = get_service().count_palabras_student(student_id)
-    return render_template('vocacional/enganchar.html', word_count=word_count)
+    svc = get_service()
+    word_count = svc.count_palabras_student(student_id)
+    my_words = svc.get_student_words(student_id)
+    return render_template('vocacional/enganchar.html', word_count=word_count, my_words=my_words)
 
 
 @vocacional_bp.route('/enganchar/palabra', methods=['POST'])

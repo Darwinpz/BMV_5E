@@ -130,6 +130,7 @@ const discScores = { D: 0, I: 0, S: 0, C: 0 };
 let currentIdx = 0;
 let discChart = null;
 let isSubmitting = false;
+let autoAdvanceVersion = 0; // bumped on every selection and manual nav; stale timers check this
 
 const COLORS  = { D: '#C0392B', I: '#E67E22', S: '#27AE60', C: '#2980B9' };
 const BG_COLORS = { D: '#FADBD8', I: '#FEF9E7', S: '#EAFAF1', C: '#EBF5FB' };
@@ -234,17 +235,25 @@ function selectOption(qId, letter, profile) {
     updateChart();
     showQuestion(currentIdx);
 
-    // Auto-advance on non-last questions
+    // Auto-advance: capture version + index so stale timers don't fire
     if (currentIdx < questions.length - 1) {
-        setTimeout(() => nextQuestion(true), 400);
+        const myVersion = ++autoAdvanceVersion;
+        const fromIdx   = currentIdx;
+        setTimeout(() => {
+            if (autoAdvanceVersion === myVersion && currentIdx === fromIdx) {
+                nextQuestion(true);
+            }
+        }, 400);
     }
 }
 
 function prevQuestion() {
+    autoAdvanceVersion++; // cancel any pending auto-advance
     if (currentIdx > 0) showQuestion(currentIdx - 1);
 }
 
 function nextQuestion(auto = false) {
+    if (!auto) autoAdvanceVersion++; // cancel any pending auto-advance for this question
     if (!auto && !answers[questions[currentIdx].id]) {
         const h5 = document.getElementById('questionText');
         h5.classList.add('shake');
