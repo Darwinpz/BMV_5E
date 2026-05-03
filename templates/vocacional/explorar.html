@@ -175,16 +175,34 @@ function updateChart() {
 
 function updateNavButton(idx) {
     const btn = document.getElementById('btnNext');
-    const isLast = idx === questions.length - 1;
+    const isLast     = idx === questions.length - 1;
+    const answered   = Object.keys(answers).length;
+    const allDone    = answered === questions.length;
 
     if (isLast) {
-        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Ver mi perfil';
-        btn.style.background = '#27AE60';
-        btn.onclick = () => submitDisc();
+        const remaining = questions.length - answered;
+        if (allDone) {
+            btn.innerHTML        = '<i class="bi bi-check2-circle me-1"></i>Ver mi perfil';
+            btn.style.background = '#27AE60';
+            btn.style.opacity    = '1';
+            btn.style.cursor     = 'pointer';
+            btn.disabled         = false;
+            btn.onclick          = () => submitDisc();
+        } else {
+            btn.innerHTML        = `<i class="bi bi-lock-fill me-1"></i>Ver mi perfil&nbsp;<span style="font-size:.75rem;opacity:.9;">(${remaining} sin responder)</span>`;
+            btn.style.background = '#95a5a6';
+            btn.style.opacity    = '0.85';
+            btn.style.cursor     = 'not-allowed';
+            btn.disabled         = true;
+            btn.onclick          = null;
+        }
     } else {
-        btn.innerHTML = 'Siguiente <i class="bi bi-arrow-right ms-1"></i>';
+        btn.innerHTML        = 'Siguiente <i class="bi bi-arrow-right ms-1"></i>';
         btn.style.background = '#E67E22';
-        btn.onclick = () => nextQuestion();
+        btn.style.opacity    = '1';
+        btn.style.cursor     = 'pointer';
+        btn.disabled         = false;
+        btn.onclick          = () => nextQuestion();
     }
 }
 
