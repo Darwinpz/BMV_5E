@@ -9,6 +9,20 @@ class ExitTicketRepository:
         result = self.collection.insert_one(exit_ticket.to_dict())
         return str(result.inserted_id)
 
+    def upsert_by_student_id(self, student_id: str, exit_ticket: ExitTicketModel):
+        self.collection.update_one(
+            {'student_id': student_id},
+            {
+                '$set': {
+                    'carrera_interes': exit_ticket.carrera_interes,
+                    'claridad': exit_ticket.claridad,
+                    'comentario': exit_ticket.comentario,
+                },
+                '$setOnInsert': {'created_at': exit_ticket.created_at},
+            },
+            upsert=True,
+        )
+
     def find_by_student_id(self, student_id: str):
         data = self.collection.find_one({'student_id': student_id})
         return ExitTicketModel.from_dict(data) if data else None

@@ -73,15 +73,11 @@
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <div>
-                            <h6 class="fw-bold mb-0">Nube de palabras en tiempo real</h6>
-                            <small class="text-muted">Actualización automática cada 3 segundos</small>
+                            <h6 class="fw-bold mb-0">Mis respuestas</h6>
+                            <small class="text-muted">Solo tus palabras · <a href="{{ url_for('vocacional.nube_display') }}" target="_blank" class="text-muted text-decoration-underline">Ver nube general</a></small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-danger-subtle text-danger small" id="totalWords">Cargando...</span>
-                            <a href="{{ url_for('vocacional.nube_display') }}" target="_blank"
-                               class="btn btn-outline-secondary btn-sm" title="Ver en pantalla completa">
-                                <i class="bi bi-fullscreen"></i>
-                            </a>
+                            <span class="badge bg-danger-subtle text-danger small" id="totalWords">{{ word_count }}/3</span>
                         </div>
                     </div>
                     <div id="cloudContainer" class="rounded-3" style="height:380px; background:#FAFAFA; border:1px solid #F0F0F0; position:relative; overflow:hidden; cursor:grab; user-select:none;">
@@ -163,15 +159,14 @@ async function enviarPalabra() {
             sentCount.textContent = wordCount;
             myWords.push(palabra);
             wordInput.value = '';
-            charCount.textContent = '0/50';
+            charCount.textContent = '0/25';
             renderMyBadges();
+            renderMyCloud();
 
             if (wordCount >= 3) {
                 btnEnviar.disabled = true;
                 wordInput.disabled = true;
                 showSuccess('¡Gracias! Ya enviaste tus 3 respuestas.');
-                if (cloudInterval) { clearInterval(cloudInterval); cloudInterval = null; }
-                refreshWordCloud(); // final refresh to include this word
             } else {
                 btnEnviar.disabled = false;
                 wordInput.focus();
@@ -215,85 +210,64 @@ function renderMyBadges() {
     ).join('');
 }
 
-// Word cloud — signature-based refresh, Mentimeter-style rotation
-let lastWordSig = null;
+// Word cloud — shows only this student's own words (no API polling)
 let cloudRendering = false;
 const CLOUD_COLORS = ['#C0392B','#E67E22','#27AE60','#2980B9','#8E44AD','#16A085','#D35400','#1A5276','#E91E63','#00BCD4'];
+const CHAR_W = 0.56;
 
-async function refreshWordCloud() {
-    if (cloudRendering) return;
-    try {
-        const res = await fetch('{{ url_for("vocacional.api_palabras") }}');
-        const words = await res.json();
-        const sig = JSON.stringify(words);
+function renderMyCloud() {
+    totalWordsEl.textContent = `${myWords.length}/3`;
 
-        totalWordsEl.textContent = words.length > 0
-            ? `${words.length} palabra${words.length !== 1 ? 's' : ''}`
-            : 'Sin respuestas aún';
-
-        if (words.length === 0) {
-            cloudPlaceholder.style.display = 'flex';
-            canvas.style.display = 'none';
-            lastWordSig = sig;
-            return;
-        }
-
-        if (sig === lastWordSig) return;
-        lastWordSig = sig;
-
-        cloudRendering = true;
-        cloudPlaceholder.style.display = 'none';
-        canvas.style.opacity = '0.1';
-        canvas.style.transition = 'opacity 0.35s ease';
-        canvas.style.display = 'block';
-
-        setTimeout(() => {
-            const container = document.getElementById('cloudContainer');
-            canvas.width  = container.offsetWidth  || 500;
-            canvas.height = container.offsetHeight || 380;
-
-            const maxWeight = Math.max(...words.map(w => w.weight));
-            const n = words.length;
-            // Size cap: font must fit all words in the canvas area
-            const fitFont  = Math.round(Math.sqrt((canvas.width * canvas.height) / (n * 14)));
-            const baseFont = n <= 3 ? 46 : n <= 7 ? 36 : n <= 15 ? 28 : n <= 30 ? 22 : 16;
-            const maxFont  = Math.min(baseFont, fitFont);
-            const minFont  = Math.max(11, Math.round(maxFont * 0.5));
-
-            const list = words.map(w => [
-                w.text,
-                Math.max(minFont, Math.round((w.weight / maxWeight) * maxFont))
-            ]);
-
-            WordCloud(canvas, {
-                list,
-                gridSize: 6,
-                weightFactor: 1,
-                fontFamily: 'Impact, Arial Black, sans-serif',
-                color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
-                rotateRatio: 0.4,
-                rotationSteps: 2,
-                backgroundColor: '#FAFAFA',
-                shrinkToFit: true,
-                drawOutOfBound: false,
-                wait: 8,
-            });
-
-            canvas.style.opacity = '1';
-            setTimeout(() => { cloudRendering = false; }, 800);
-        }, 250);
-    } catch (e) {
-        cloudRendering = false;
-        console.error('Error cargando nube:', e);
+    if (myWords.length === 0) {
+        cloudPlaceholder.style.display = 'flex';
+        canvas.style.display = 'none';
+        return;
     }
+
+    if (cloudRendering) return;
+    cloudRendering = true;
+
+    cloudPlaceholder.style.display = 'none';
+    canvas.style.opacity = '0.1';
+    canvas.style.transition = 'opacity 0.35s ease';
+    canvas.style.display = 'block';
+
+    setTimeout(() => {
+        const container = document.getElementById('cloudContainer');
+        canvas.width  = container.offsetWidth  || 500;
+        canvas.height = container.offsetHeight || 380;
+
+        const n = myWords.length;
+        const fitFont  = Math.round(Math.sqrt((canvas.width * canvas.height) / (n * 6)));
+        const baseFont = n <= 1 ? 90 : n <= 2 ? 70 : 55;
+        const fontSize = Math.min(baseFont, fitFont);
+
+        const list = myWords.map(w => {
+            const maxByH = Math.floor((canvas.width  * 0.88) / (w.length * CHAR_W));
+            const maxByV = Math.floor((canvas.height * 0.88) / (w.length * CHAR_W));
+            return [w, Math.max(14, Math.min(fontSize, maxByH, maxByV))];
+        });
+
+        WordCloud(canvas, {
+            list,
+            gridSize: 6,
+            weightFactor: 1,
+            fontFamily: 'Impact, Arial Black, sans-serif',
+            color: () => CLOUD_COLORS[Math.floor(Math.random() * CLOUD_COLORS.length)],
+            rotateRatio: 0.4,
+            rotationSteps: 2,
+            backgroundColor: '#FAFAFA',
+            shrinkToFit: true,
+            drawOutOfBound: false,
+            wait: 8,
+        });
+
+        canvas.style.opacity = '1';
+        setTimeout(() => { cloudRendering = false; }, 800);
+    }, 250);
 }
 
-refreshWordCloud();
-// Only keep polling while the student hasn't yet submitted all 3 words
-let cloudInterval = null;
-if (wordCount < 3) {
-    cloudInterval = setInterval(refreshWordCloud, 3500);
-}
+renderMyCloud();
 
 // ── Zoom / Pan for cloudContainer ─────────────────────────────────────────────
 let cloudScale = 1, cloudTx = 0, cloudTy = 0;

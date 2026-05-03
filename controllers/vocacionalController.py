@@ -113,6 +113,12 @@ def explorar():
     student_id = _require_student()
     if not student_id:
         return redirect(url_for('vocacional.registro'))
+    svc = get_service()
+    if svc.count_palabras_student(student_id) == 0:
+        flash('Primero completa el Módulo 1: envía al menos una respuesta.', 'warning')
+        return redirect(url_for('vocacional.enganchar'))
+    if svc.get_disc_result(student_id):
+        return redirect(url_for('vocacional.explicar'))
     return render_template('vocacional/explorar.html', questions=DISC_QUESTIONS)
 
 
@@ -144,16 +150,19 @@ def explicar():
 
     svc = get_service()
     disc_result = svc.get_disc_result(student_id)
-    perfil = disc_result.perfil if disc_result else None
-    puntajes = disc_result.puntajes if disc_result else None
 
-    if disc_result:
-        _mark_complete('explicar')
+    if not disc_result:
+        if svc.count_palabras_student(student_id) == 0:
+            flash('Primero completa el Módulo 1.', 'warning')
+            return redirect(url_for('vocacional.enganchar'))
+        flash('Primero completa el Test DISC en el Módulo 2.', 'warning')
+        return redirect(url_for('vocacional.explorar'))
 
+    _mark_complete('explicar')
     return render_template(
         'vocacional/explicar.html',
-        perfil=perfil,
-        puntajes=puntajes,
+        perfil=disc_result.perfil,
+        puntajes=disc_result.puntajes,
         profiles=DISC_PROFILES
     )
 
@@ -166,14 +175,23 @@ def elaborar():
     if not student_id:
         return redirect(url_for('vocacional.registro'))
 
-    disc_result = get_service().get_disc_result(student_id)
-    perfil = disc_result.perfil if disc_result else None
-    perfil_data = DISC_PROFILES.get(perfil) if perfil else None
+    svc = get_service()
+    disc_result = svc.get_disc_result(student_id)
 
-    if disc_result:
-        _mark_complete('elaborar')
+    if not disc_result:
+        if svc.count_palabras_student(student_id) == 0:
+            flash('Primero completa el Módulo 1.', 'warning')
+            return redirect(url_for('vocacional.enganchar'))
+        flash('Primero completa el Test DISC en el Módulo 2.', 'warning')
+        return redirect(url_for('vocacional.explorar'))
 
-    return render_template('vocacional/elaborar.html', perfil=perfil, perfil_data=perfil_data)
+    if 'explicar' not in session.get('completed_modules', []):
+        flash('Primero revisa tu perfil DISC en el Módulo 3.', 'warning')
+        return redirect(url_for('vocacional.explicar'))
+
+    _mark_complete('elaborar')
+    perfil = disc_result.perfil
+    return render_template('vocacional/elaborar.html', perfil=perfil, perfil_data=DISC_PROFILES.get(perfil))
 
 
 # ── Módulo 5: Evaluar ─────────────────────────────────────────────────────────
@@ -184,10 +202,23 @@ def evaluar():
     if not student_id:
         return redirect(url_for('vocacional.registro'))
 
-    disc_result = get_service().get_disc_result(student_id)
-    perfil = disc_result.perfil if disc_result else None
+    svc = get_service()
+    disc_result = svc.get_disc_result(student_id)
 
-    return render_template('vocacional/evaluar.html', carreras=CARRERAS_TECNICAS, perfil=perfil)
+    if not disc_result:
+        if svc.count_palabras_student(student_id) == 0:
+            flash('Primero completa el Módulo 1.', 'warning')
+            return redirect(url_for('vocacional.enganchar'))
+        flash('Primero completa el Test DISC en el Módulo 2.', 'warning')
+        return redirect(url_for('vocacional.explorar'))
+
+    if 'elaborar' not in session.get('completed_modules', []):
+        flash('Primero explora las opciones de carrera en el Módulo 4.', 'warning')
+        return redirect(url_for('vocacional.elaborar'))
+
+    perfil = disc_result.perfil
+    existing_ticket = svc.get_exit_ticket(student_id)
+    return render_template('vocacional/evaluar.html', carreras=CARRERAS_TECNICAS, perfil=perfil, existing_ticket=existing_ticket)
 
 
 @vocacional_bp.route('/evaluar/guardar', methods=['POST'])

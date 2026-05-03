@@ -71,6 +71,46 @@
                     </div>
                     <p class="text-muted small mb-4">Cuéntanos tu experiencia</p>
 
+                    {% if existing_ticket %}
+                    <!-- Read-only summary -->
+                    <div class="alert alert-success py-2 small mb-4">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Ya enviaste tu ticket de salida. Aquí está tu resumen:
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="text-muted small fw-semibold mb-1">CARRERA DE INTERÉS</p>
+                        <p class="fw-bold mb-0">{{ existing_ticket.carrera_interes or '—' }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="text-muted small fw-semibold mb-1">CLARIDAD VOCACIONAL</p>
+                        <div class="d-flex gap-2 mt-1">
+                            {% for i in range(1, 6) %}
+                            <div class="rating-label d-flex align-items-center justify-content-center fw-bold"
+                                 style="{% if existing_ticket.claridad == i|string %}background:#2C3E50;color:white;border-color:#2C3E50;{% endif %}">
+                                {{ i }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <span class="text-muted" style="font-size:.7rem;">Nada clara</span>
+                            <span class="text-muted" style="font-size:.7rem;">Muy clara</span>
+                        </div>
+                    </div>
+
+                    {% if existing_ticket.comentario %}
+                    <div class="mb-3">
+                        <p class="text-muted small fw-semibold mb-1">COMENTARIO</p>
+                        <p class="fst-italic text-muted mb-0 small">{{ existing_ticket.comentario }}</p>
+                    </div>
+                    {% endif %}
+
+                    <a href="{{ url_for('vocacional.completado') }}" class="btn fw-bold w-100 py-2 fs-6 mt-2" style="background:#27AE60;color:white;">
+                        <i class="bi bi-check2-circle me-2"></i>Ver mi resultado final
+                    </a>
+
+                    {% else %}
                     <form method="POST" action="{{ url_for('vocacional.evaluar_guardar') }}" id="exitForm">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
@@ -128,6 +168,7 @@
                             <i class="bi bi-send-fill me-2"></i>Enviar respuestas
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -144,6 +185,7 @@
 {% endblock %}
 
 {% block scripts %}
+{% if not existing_ticket %}
 <script>
 // Rating buttons interactive style
 document.querySelectorAll('.rating-radio').forEach(radio => {
@@ -170,4 +212,5 @@ document.getElementById('exitForm').addEventListener('submit', function(e) {
     }
 });
 </script>
+{% endif %}
 {% endblock %}
