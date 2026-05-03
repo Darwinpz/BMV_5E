@@ -335,7 +335,8 @@ function verDetalle(studentId) {
                         <div class="small text-muted fw-semibold mb-2"><i class="bi bi-clipboard-check-fill me-1"></i>Ticket de salida</div>
                         ${d.ticket ? `
                         <div class="mb-1"><strong>Carrera de interés:</strong><br>${d.ticket.carrera_interes || '—'}</div>
-                        <div><strong>Claridad vocacional:</strong> <span class="badge bg-dark">${d.ticket.claridad}/5</span></div>
+                        <div class="mb-1"><strong>Claridad vocacional:</strong> <span class="badge bg-dark">${d.ticket.claridad}/5</span></div>
+                        ${d.ticket.comentario ? `<div class="mt-2"><strong>Comentario:</strong><br><span class="text-muted small fst-italic">${d.ticket.comentario}</span></div>` : ''}
                         ` : '<span class="text-muted small">No completado</span>'}
                     </div>
                 </div>

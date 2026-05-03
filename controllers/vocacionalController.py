@@ -199,8 +199,9 @@ def evaluar_guardar():
 
     carrera_interes = request.form.get('carrera_interes', '')
     claridad = request.form.get('claridad', '')
+    comentario = request.form.get('comentario', '')
 
-    get_service().guardar_exit_ticket(student_id, carrera_interes, claridad)
+    get_service().guardar_exit_ticket(student_id, carrera_interes, claridad, comentario)
     _mark_complete('evaluar')
 
     return redirect(url_for('vocacional.completado'))
@@ -287,6 +288,7 @@ def admin_detalle(student_id):
         'ticket': {
             'carrera_interes': t.carrera_interes,
             'claridad': t.claridad,
+            'comentario': t.comentario or '',
         } if t else None,
     })
 

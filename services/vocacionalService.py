@@ -88,11 +88,12 @@ class VocacionalService:
     def get_disc_result(self, student_id: str):
         return self.disc_repo.find_by_student_id(student_id)
 
-    def guardar_exit_ticket(self, student_id: str, carrera_interes: str, claridad: str) -> dict:
+    def guardar_exit_ticket(self, student_id: str, carrera_interes: str, claridad: str, comentario: str = '') -> dict:
         ticket = ExitTicketModel(
             student_id=student_id,
             carrera_interes=carrera_interes,
-            claridad=claridad
+            claridad=claridad,
+            comentario=comentario.strip() if comentario else ''
         )
         self.ticket_repo.create(ticket)
         return {'success': True}

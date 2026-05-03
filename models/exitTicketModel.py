@@ -1,11 +1,12 @@
 from datetime import datetime
 
 class ExitTicketModel:
-    def __init__(self, id=None, student_id=None, carrera_interes=None, claridad=None, created_at=None):
+    def __init__(self, id=None, student_id=None, carrera_interes=None, claridad=None, comentario=None, created_at=None):
         self.id = id
         self.student_id = student_id
         self.carrera_interes = carrera_interes
         self.claridad = claridad
+        self.comentario = comentario
         self.created_at = created_at or datetime.utcnow()
 
     @staticmethod
@@ -15,6 +16,7 @@ class ExitTicketModel:
             student_id=data.get('student_id'),
             carrera_interes=data.get('carrera_interes'),
             claridad=data.get('claridad'),
+            comentario=data.get('comentario'),
             created_at=data.get('created_at')
         )
 
@@ -23,5 +25,6 @@ class ExitTicketModel:
             'student_id': self.student_id,
             'carrera_interes': self.carrera_interes,
             'claridad': self.claridad,
+            'comentario': self.comentario,
             'created_at': self.created_at
         }
